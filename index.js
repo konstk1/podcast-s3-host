@@ -15,9 +15,9 @@ exports.handler = async (event, context) => {
   try {
     const { Contents } = await s3.listObjects(params).promise();
     const files = Contents.map(c => c.Key);
-    // console.log('Contents', files);
+    // console.log('Contents', Contents);
 
-    const feed = rss.generateFeed(files);
+    const feed = rss.generateFeed(bucket, files);
     console.log(feed);
     await rss.save(feed, bucket, "feed.xml");
 

@@ -3,6 +3,13 @@ const aws = require('aws-sdk');
 
 const s3 = new aws.S3({ apiVersion: '2006-03-01' });
 
+let podcastBucket;
+
+function makeS3Url(bucket, key) {
+  const path = key.replace(/ /g, '+');
+  return `https://${bucket}.s3.amazonaws.com/${path}`
+}
+
 function fileListToChannels(fileList) {
   let channels = {};
 
@@ -11,8 +18,8 @@ function fileListToChannels(fileList) {
 
     if (comps.length < 2) return; // ignore objects at root
 
-    const folder = comps[0].replace(/ /g, '+');
-    const file = comps[1].replace(/ /g, '+');
+    const folder = comps[0];
+    const file = comps[1];
 
     if (!file.endsWith('.mp3')) return;
 
@@ -29,6 +36,7 @@ function fileListToChannels(fileList) {
 
 function buildEpisode(rss, episode) {
   const episodeNum = episode.split(/[+.]/)[1];
+  const url = makeS3Url(podcastBucket, `First 90 Days/${episode}`);
 
   rss.ele('item')
     .ele('itunes:episodeType', 'full').up()
@@ -38,13 +46,13 @@ function buildEpisode(rss, episode) {
     .ele('description', 'none').up()
     .ele('itunes:explicit', 'no').up()
     .ele('enclosure')
-    .att('length', 498537)
-    .att('type', 'audio/mpeg')
-    .att('url', `https://podcasts-kk.s3.amazonaws.com/First+90+Days/${episode}`)
+      .att('length', 498537)
+      .att('type', 'audio/mpeg')
+      .att('url', url)
     .up()
-    .ele('guid', `https://podcasts-kk.s3.amazonaws.com/First+90+Days/${episode}`).up()
+    .ele('guid', url).up()
     .ele('itunes:explicity', 'no').up()
-    .ele('pubDate', new Date()).up()
+    .ele('pubDate', new Date().toUTCString()).up()
     .ele('itunes:duration', 1024).up()
     ;
 
@@ -57,7 +65,7 @@ function buildChannel(rss, title, episodes) {
     .ele('description', 'none').up()
     .ele('itunes:image', 'https://applehosted.podcasts.apple.com/hiking_treks/artwork.png').up()
     .ele('itunes:category').att('text', 'Business').up()
-    .ele('link', 'httpss://www.apple.com/itunes/podcasts/').up()
+    .ele('link', 'https://www.apple.com/itunes/podcasts/').up()
     .ele('language', 'en-us').up()
     .ele('itunes:explicit', 'no').up()
     .ele('itunes:author', 'KK').up()
@@ -96,7 +104,8 @@ async function save(xml, bucket, fileName) {
   return s3.putObject(params).promise()
 }
 
-function generateFeed(fileList) {
+function generateFeed(bucket, fileList) {
+  podcastBucket = bucket;
   const channels = fileListToChannels(fileList);
   const xml = toXml(channels);
   return xml;
