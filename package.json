@@ -1,0 +1,20 @@
+{
+  "name": "podcast-s3-host",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/kostyan5/podcast-s3-host.git",
+  "author": "Konstantin Klitenik <kostyan5@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "start": "node test/test_lambda.js",
+    "zip": "zip -r z_function.zip index.js node_modules src",
+    "upload": "aws lambda update-function-code --function-name podcasts-s3-lambda --zip-file fileb://z_function.zip",
+    "deploy": "yarn zip && yarn upload",
+    "invoke": "aws lambda invoke --function-name podcasts-s3-lambda /dev/null --log-type Tail --query 'LogResult' --output text | base64 -d"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.610.0",
+    "xmlbuilder": "^13.0.2"
+  }
+}
