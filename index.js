@@ -6,7 +6,13 @@ const s3 = new aws.S3({ apiVersion: '2006-03-01' });
 exports.handler = async (event, context) => {
   console.log('Received event:', JSON.stringify(event, null, 2));
 
-  // Get the object from the event and show its content type
+  // ignore updates to xml files
+  if (event.Records[0].s3.object.key.endsWith('.xml')) {
+    console.log("Ignoring xml update");
+    return "Done";
+  }
+
+  // get bucket name from the event
   const bucket = event.Records[0].s3.bucket.name;
   const params = {
     Bucket: bucket,
@@ -25,7 +31,6 @@ exports.handler = async (event, context) => {
   } catch (err) {
     console.log(err);
     const message = err.message;
-    //`Error getting objectsfrom bucket ${bucket}. Make sure they exist and your bucket is in the same region as this function.`;
     console.log(message);
     throw new Error(message);
   }

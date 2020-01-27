@@ -26,8 +26,16 @@ function fileListToChannels(fileList) {
     if (channels[folder] == undefined) {
       channels[folder] = [];
     }
+
+    const title = file.replace(/\.[^/.]+$/, "");  // strip file extension to form title
+    const episodeNum = file.match(/\d+/)[0];      // pull out first number in file name as ep #
+
     if (file.length > 0) {
-      channels[folder].push(file);
+      channels[folder].push({
+        title,
+        episodeNum,
+        url: makeS3Url(podcastBucket, f),
+      });
     }
   });
 
@@ -35,24 +43,20 @@ function fileListToChannels(fileList) {
 }
 
 function buildEpisode(rss, episode) {
-  const episodeNum = episode.split(/[+.]/)[1];
-  const url = makeS3Url(podcastBucket, `First 90 Days/${episode}`);
-
   rss.ele('item')
     .ele('itunes:episodeType', 'full').up()
-    .ele('title', episode).up()
-    .ele('episode', episodeNum).up()
-    .ele('itunes:title', episode).up()
+    .ele('title', episode.title).up()
+    .ele('itunes:title', episode.title).up()
+    .ele('episode', episode.episodeNum).up()
     .ele('description', 'none').up()
-    .ele('itunes:explicit', 'no').up()
     .ele('enclosure')
       .att('length', 498537)
       .att('type', 'audio/mpeg')
-      .att('url', url)
+      .att('url', episode.url)
     .up()
-    .ele('guid', url).up()
-    .ele('itunes:explicity', 'no').up()
+    .ele('guid', episode.url).up()
     .ele('pubDate', new Date().toUTCString()).up()
+    .ele('itunes:explicity', 'no').up()
     .ele('itunes:duration', 1024).up()
     ;
 
@@ -63,14 +67,12 @@ function buildChannel(rss, title, episodes) {
   const channel = rss.ele('channel');
   channel.ele('title', title).up()
     .ele('description', 'none').up()
-    .ele('itunes:image', 'https://applehosted.podcasts.apple.com/hiking_treks/artwork.png').up()
-    .ele('itunes:category').att('text', 'Business').up()
     .ele('link', 'https://www.apple.com/itunes/podcasts/').up()
     .ele('language', 'en-us').up()
+    .ele('itunes:image', 'https://applehosted.podcasts.apple.com/hiking_treks/artwork.png').up()
+    .ele('itunes:category').att('text', 'Business').up()
     .ele('itunes:explicit', 'no').up()
-    .ele('itunes:author', 'KK').up()
-    .ele('itunes:owner', 'KK').up()
-    // .ele('itunes:block', 'Yes').up()
+    .ele('itunes:block', 'Yes').up()
     ;
 
   episodes.forEach(e => buildEpisode(channel, e));
