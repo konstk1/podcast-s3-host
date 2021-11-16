@@ -14,7 +14,7 @@
     "invoke": "aws lambda invoke --function-name podcasts-s3-lambda /dev/null --log-type Tail --query 'LogResult' --output text | base64 -d"
   },
   "dependencies": {
-    "aws-sdk": "^2.610.0",
+    "aws-sdk": "^2.814.0",
     "xmlbuilder": "^13.0.2"
   }
 }
